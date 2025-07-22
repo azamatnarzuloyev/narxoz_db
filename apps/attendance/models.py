@@ -81,13 +81,14 @@ class Filial(BaseModel):
     value = models.CharField(max_length=50, unique=True)
     address = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    region = models.ForeignKey(
-        Region, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='filials'
-    )
+    # region = models.ForeignKey(
+    #     Region, 
+    #     on_delete=models.SET_NULL, 
+    #     null=True, 
+    #     blank=True, 
+    #     related_name='filials'
+    # )
+    universitet = models.CharField(max_length=50, unique=True, choices=REGION_CHOICES)
 
     def __str__(self):
         return self.name

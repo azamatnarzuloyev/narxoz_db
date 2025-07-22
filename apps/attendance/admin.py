@@ -120,9 +120,9 @@ class ImageAdmin(admin.ModelAdmin):
 class AttendanceRecordAdmin(admin.ModelAdmin):
     list_display = [
         'employee', 'date', 'check_in', 'check_out', 
-        'status', 'camera', 'region', 'recorded_at'
+        'status', 'camera', 'region', 
     ]
-    list_filter = ['status', 'date', 'region', 'camera', 'recorded_at']
+    list_filter = ['status', 'date', 'region', 'camera', ]
     search_fields = ['employee__first_name', 'employee__last_name', 'employee__employee_id']
     raw_id_fields = ['employee', 'camera', 'region']
     date_hierarchy = 'date'
@@ -142,7 +142,7 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
             'fields': ('face_image', 'face_image_preview', 'distance')
         }),
         ('Additional Information', {
-            'fields': ('notes', 'recorded_at')
+            'fields': ('notes',)
         }),
     )
     
