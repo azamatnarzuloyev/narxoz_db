@@ -81,6 +81,13 @@ class Filial(BaseModel):
     value = models.CharField(max_length=50, unique=True)
     address = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    region = models.ForeignKey(
+        Region, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='filials'
+    )
 
     def __str__(self):
         return self.name
@@ -89,6 +96,10 @@ class Filial(BaseModel):
         verbose_name = "Filial"
         verbose_name_plural = "Filials"
         ordering = ['name']
+
+
+
+
 
 class Employee(BaseModel):
     """Xodimlar modeli. Xodimlar haqida asosiy ma'lumotlarni saqlaydi."""
@@ -215,6 +226,13 @@ class Camera(BaseModel):
     location = models.CharField(max_length=255, blank=True)
     rtsp_url = models.URLField(blank=True)
     last_ping = models.DateTimeField(null=True, blank=True)
+    filial = models.ForeignKey(
+        Filial, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='cameras'
+    ) 
 
     def __str__(self):
         return self.name
