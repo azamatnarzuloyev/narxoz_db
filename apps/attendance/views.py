@@ -424,7 +424,7 @@ class FaceResultView(APIView):
     responses={200: AttendanceStatsSerializer(many=True)}
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def attendance_stats(request):
     """Get attendance statistics by region for today"""
     today = timezone.now().date()
@@ -457,7 +457,7 @@ def attendance_stats(request):
     responses={200: {'description': 'Successfully linked'}}
 )
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def link_unknown_face(request):
     """Link unknown face to employee"""
     serializer = UnknownFaceLinkSerializer(data=request.data)
@@ -509,7 +509,7 @@ def link_unknown_face(request):
     description="Get dashboard statistics and recent activities"
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def dashboard_data(request):
     """Get dashboard statistics"""
     today = timezone.now().date()
