@@ -114,3 +114,64 @@ class FilialFilter(django_filters.FilterSet):
     class Meta:
         model = Filial
         fields = ['name', 'value', 'is_active']
+
+
+
+
+# # filters.py (optional - for advanced filtering)
+# import django_filters
+# from django_filters import rest_framework as filters
+# from .models import Employee, AttendanceRecord, UnknownFace
+
+# class EmployeeFilter(filters.FilterSet):
+#     name = filters.CharFilter(method='filter_by_name')
+#     hire_date_from = filters.DateFilter(field_name='hire_date', lookup_expr='gte')
+#     hire_date_to = filters.DateFilter(field_name='hire_date', lookup_expr='lte')
+    
+#     class Meta:
+#         model = Employee
+#         fields = {
+#             'region': ['exact'],
+#             'position': ['exact', 'in'],
+#             'status': ['exact'],
+#             'is_active': ['exact'],
+#         }
+    
+#     def filter_by_name(self, queryset, name, value):
+#         return queryset.filter(
+#             models.Q(first_name__icontains=value) |
+#             models.Q(last_name__icontains=value) |
+#             models.Q(middle_name__icontains=value)
+#         )
+
+# class AttendanceRecordFilter(filters.FilterSet):
+#     date_from = filters.DateFilter(field_name='date', lookup_expr='gte')
+#     date_to = filters.DateFilter(field_name='date', lookup_expr='lte')
+#     check_in_from = filters.TimeFilter(field_name='check_in', lookup_expr='gte')
+#     check_in_to = filters.TimeFilter(field_name='check_in', lookup_expr='lte')
+    
+#     class Meta:
+#         model = AttendanceRecord
+#         fields = {
+#             'employee': ['exact'],
+#             'region': ['exact'],
+#             'camera': ['exact'],
+#             'status': ['exact', 'in'],
+#             'date': ['exact', 'gte', 'lte'],
+#         }
+
+# class UnknownFaceFilter(filters.FilterSet):
+#     recorded_from = filters.DateTimeFilter(field_name='recorded_at', lookup_expr='gte')
+#     recorded_to = filters.DateTimeFilter(field_name='recorded_at', lookup_expr='lte')
+    
+#     class Meta:
+#         model = UnknownFace
+#         fields = {
+#             'camera': ['exact'],
+#             'region': ['exact'],
+#             'is_processed': ['exact'],
+#             'linked_employee': ['exact', 'isnull'],
+#         }
+
+
+

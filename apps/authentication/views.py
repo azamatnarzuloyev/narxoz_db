@@ -12,17 +12,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class LoginView(APIView):
-    """
-    User login endpoint
-    """
     permission_classes = []
 
-    # @extend_schema(
-    #     summary="User login",
-    #     description="Authenticate user and return token",
-    #     request=LoginSerializer,
-    #     responses={200: {'token': 'string', 'user': UserSerializer}}
-    # )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -34,22 +25,24 @@ class LoginView(APIView):
                 if user.is_active:
                     token, created = Token.objects.get_or_create(user=user)
                     logger.info(f"User {username} logged in successfully")
-                    
                     return Response({
                         'token': token.key,
                         'user': UserSerializer(user).data
                     })
                 else:
+                    logger.warning(f"Login failed for {username}: Account is disabled")
                     return Response(
-                        {'error': 'Account is disabled'}, 
+                        {'error': _('Hisob faol emas')}, 
                         status=status.HTTP_401_UNAUTHORIZED
                     )
             else:
+                logger.warning(f"Login failed for {username}: Invalid credentials")
                 return Response(
-                    {'error': 'Invalid credentials'}, 
+                    {'error': ('Noto\'g\'ri login yoki parol')}, 
                     status=status.HTTP_401_UNAUTHORIZED
                 )
         
+        logger.error(f"Login failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):

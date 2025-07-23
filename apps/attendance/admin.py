@@ -4,9 +4,12 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import (
     Region, Filial, Employee, Terminal, Camera, Admin, 
-    Image, AttendanceRecord, UnknownFace
+    Image, AttendanceRecord, UnknownFace , EmployeeCameraStats
 )
 
+
+
+admin.site.register(EmployeeCameraStats)
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
     list_display = ['name', 'label', 'employees_count', 'is_active', 'created_at']
@@ -192,3 +195,5 @@ class UnknownFaceAdmin(admin.ModelAdmin):
 admin.site.site_header = "Attendance System Administration"
 admin.site.site_title = "Attendance Admin"
 admin.site.index_title = "Welcome to Attendance System Administration"
+
+

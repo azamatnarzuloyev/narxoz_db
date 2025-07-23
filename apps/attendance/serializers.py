@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import (
     Region, Filial, Employee, Terminal, Camera, Admin, Image,
     AttendanceRecord, UnknownFace, REGION_CHOICES, POSITION_CHOICES,
-    STATUS_CHOICES, ATTENDANCE_STATUS_CHOICES
+    STATUS_CHOICES, ATTENDANCE_STATUS_CHOICES, PositionApi
 )
 
 class RegionSerializer(serializers.ModelSerializer):
@@ -42,7 +42,7 @@ class FilialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Filial
-        fields = ['id', 'name', 'value', 'address', 'is_active', 'terminals_count', 'created_at']
+        fields = ['id', 'name', 'value', 'address', 'is_active', 'terminals_count', 'created_at', 'universitet']
 
     def get_terminals_count(self, obj):
         return obj.terminals.filter(status='active').count()
@@ -57,7 +57,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'id', 'employee_id', 'first_name', 'last_name', 'full_name',
+            'id', 'employee_id', 'first_name', 'last_name', 'full_name','positions',
             'position', 'position_display', 'region_name', 'terminal_name',
             'status', 'status_display', 'is_active', 'created_at'
         ]
@@ -78,7 +78,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'id', 'employee_id', 'first_name', 'last_name', 'middle_name', 'full_name',
+            'id', 'employee_id', 'first_name', 'last_name', 'middle_name', 'full_name','positions',
             'position', 'position_display', 'region', 'region_id', 'terminal', 'terminal_id',
             'status', 'status_display', 'phone_number', 'email', 'hire_date',
             'is_active', 'images_count', 'attendance_count', 'created_at', 'updated_at'
@@ -269,3 +269,22 @@ class FaceRecognitionResultSerializer(serializers.Serializer):
     cosine_similarity = serializers.FloatField()
     saved_file = serializers.CharField()
     message = serializers.CharField(required=False)
+
+
+class PositionApiSerializer(serializers.ModelSerializer):
+    """Serializer for Position API"""
+    class Meta:
+        model = PositionApi
+        fields = ['id', 'label', 'value']
+        read_only_fields = ['id']
+
+    def validate_label(self, label):
+        if not label:
+            raise serializers.ValidationError("Position name cannot be empty")
+        return label
+
+    def validate_value(self, value):
+        if not value:
+            raise serializers.ValidationError("Position value cannot be empty")
+        return value
+

@@ -5,6 +5,9 @@ urlpatterns = [
     # Employee URLs
     path('employees/', views.EmployeeListCreateView.as_view(), name='employee-list'),
     path('employees/<int:pk>/', views.EmployeeDetailView.as_view(), name='employee-detail'),
+
+    path('positions/', views.PositionApiView.as_view(), name='position-list'),
+    path('positions/<int:pk>/', views.PositionApiView.as_view(), name='position-list'),
     
     # Region URLs
     path('regions/', views.RegionListCreateView.as_view(), name='region-list'),
@@ -45,4 +48,6 @@ urlpatterns = [
     path('stats/attendance/', views.attendance_stats, name='attendance-stats'),
     path('dashboard/', views.dashboard_data, name='dashboard-data'),
     path('link-unknown-face/', views.link_unknown_face, name='link-unknown-face'),
+    path('employee-camera-stats/', views.EmployeeCameraStatsView.as_view(), name='employee-camera-stats'),
 ]
+

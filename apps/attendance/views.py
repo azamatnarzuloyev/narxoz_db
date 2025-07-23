@@ -17,22 +17,72 @@ import logging
 
 from .models import (
     Employee, Region, Terminal, Camera, AttendanceRecord, 
-    Admin, Image, UnknownFace, Filial
+    Admin, Image, UnknownFace, Filial , PositionApi , EmployeeCameraStats
 )
 from .serializers import (
     EmployeeListSerializer, EmployeeDetailSerializer, RegionSerializer, 
     TerminalSerializer, CameraSerializer, AttendanceRecordSerializer, 
     AdminSerializer, ImageSerializer, UnknownFaceSerializer, 
     FilialSerializer, AttendanceStatsSerializer, UnknownFaceLinkSerializer,
-    FaceRecognitionResultSerializer
+    FaceRecognitionResultSerializer , PositionApiSerializer
 )
 from .filters import (
     EmployeeFilter, RegionFilter, TerminalFilter, CameraFilter,
     AttendanceRecordFilter, AdminFilter, ImageFilter, UnknownFaceFilter,
-    FilialFilter
+    FilialFilter 
 )
+from datetime import datetime
+from rest_framework.authentication import TokenAuthentication
 
 logger = logging.getLogger(__name__)
+site_url = 'http://192.168.15.10:8000'
+
+
+class PositionApiView(APIView):
+    def get(self, request):
+        """
+        Get all available positions.
+        """
+        positions = PositionApi.objects.all()
+        data = [{'id': pos.pk, 'label': pos.label , 'value':pos.value} for pos in positions]
+        return Response(data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """
+        Create a new position.
+        """
+        serializer = PositionApiSerializer(data=request.data)
+        if serializer.is_valid():
+            position = serializer.save()
+            return Response({'id': position.pk, 'label': position.label, 'value': position.value}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk):
+        """
+        Update an existing position.
+        """
+        try:
+            position = PositionApi.objects.get(pk=pk)
+        except PositionApi.DoesNotExist:
+            return Response({'error': 'Position not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PositionApiSerializer(position, data=request.data, partial=True)
+        if serializer.is_valid():
+            position = serializer.save()
+            return Response({'id': position.pk, 'label': position.label, 'value': position.value}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        """
+        Delete a position.
+        """
+        try:
+            position = PositionApi.objects.get(pk=pk)
+            position.delete()
+            data = {'message': 'Position deleted successfully', "status":200}
+            return Response(data , status=status.HTTP_200_OK) 
+        except PositionApi.DoesNotExist:
+            return Response({'error': 'Position not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # Employee Views
 class EmployeeListCreateView(ListCreateAPIView):
@@ -109,6 +159,18 @@ class RegionListCreateView(ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['name', 'label']
     ordering = ['name']
+
+class RegionDetailView(APIView):
+    def get(self, request, pk):
+        """
+        Retrieve a region by ID.
+        """
+        try:
+            region = Region.objects.get(pk=pk)
+            serializer = RegionSerializer(region)
+            return Response(serializer.data)
+        except Region.DoesNotExist:
+            return Response({'error': 'Region not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class RegionDetailView(RetrieveUpdateDestroyAPIView):
     """
@@ -248,16 +310,191 @@ class FilialDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Filial.objects.all()
     serializer_class = FilialSerializer
 
-# Face Recognition API
+
+
+# # Face Recognition API
+# class FaceResultView(APIView):
+#     """
+#     Handle face recognition results from cameras.
+#     """
+#     parser_classes = (MultiPartParser, FormParser)
+
+#     @extend_schema(
+#         summary="Process face recognition result",
+#         description="Handle face data from client. If 'user' == 'unrecognized', save to UnknownFace model. Otherwise, 'user' should be an integer (employee_id) -> save to AttendanceRecord.",
+#         request={
+#             'multipart/form-data': {
+#                 'type': 'object',
+#                 'properties': {
+#                     'file': {'type': 'string', 'format': 'binary'},
+#                     'user': {'type': 'string', 'description': 'Employee ID or "unrecognized"'},
+#                     'cosine_similarity': {'type': 'number'},
+#                     'camera_ip': {'type': 'string', 'description': 'Camera IP address'},
+#                 }
+#             }
+#         },
+#         responses={200: FaceRecognitionResultSerializer}
+#     )
+#     def post(self, request, format=None):
+#         """
+#         Handle face data from client.
+#         If 'user' == 'unrecognized', save to UnknownFace model.
+#         Otherwise, 'user' should be an integer (employee_id) -> save to AttendanceRecord.
+#         """
+#         try:
+#             # Extract data from request
+#             face_file = request.FILES.get('file')
+#             cosine_similarity = request.data.get('cosine_similarity')
+#             user_value = request.data.get('user')
+#             camera_ip = request.data.get('camera_ip', "192.168.1.64")
+
+#             # Basic validation
+#             if not face_file:
+#                 return Response(
+#                     {"error": "Missing file (use 'file' in multipart form-data)."},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+
+#             if not (cosine_similarity and user_value):
+#                 return Response(
+#                     {"error": "Missing required fields (user, cosine_similarity)."},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+
+#             # Attempt to fetch camera
+#             try:
+#                 # camera_obj = Camera.objects.get(ip_address=camera_ip, status='active')
+#                 camera_obj = Camera.objects.first()
+#             except Camera.DoesNotExist:
+#                 logger.warning(f"Camera with IP {camera_ip} not found")
+#                 return Response(
+#                     {"error": "Camera not found."}, 
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Create the face_results directory if not exists
+#             save_dir = os.path.join(settings.MEDIA_ROOT, "face_results")
+#             os.makedirs(save_dir, exist_ok=True)
+#             file_path = os.path.join(save_dir, face_file.name)
+
+#             # Save file to disk
+#             try:
+#                 with open(file_path, "wb") as f:
+#                     for chunk in face_file.chunks():
+#                         f.write(chunk)
+#             except Exception as e:
+#                 logger.error(f"Could not save file: {e}")
+#                 return Response(
+#                     {"error": f"Could not save file: {e}"}, 
+#                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                 )
+
+#             # Handle "unrecognized" user
+#             if user_value == "unrecognized":
+#                 try:
+#                     unknown_face = UnknownFace.objects.create(
+#                         face_image=face_file,
+#                         distance=cosine_similarity,
+#                         camera=camera_obj,
+#                         region=camera_obj.region
+#                     )
+#                     logger.info(f"Unknown face recorded: {unknown_face.id}")
+                    
+#                     return Response({
+#                         "status": "ok",
+#                         "employee_id": 0,
+#                         "cosine_similarity": cosine_similarity,
+#                         "saved_file": file_path,
+#                         "message": "Unknown face recorded successfully"
+#                     }, status=status.HTTP_200_OK)
+                    
+#                 except Exception as e:
+#                     logger.error(f"Error creating unknown face record: {e}")
+#                     return Response(
+#                         {"error": str(e)}, 
+#                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                     )
+
+#             # Handle "recognized" user (employee)
+#             else:
+#                 try:
+#                     employee_id = int(user_value)
+#                 except ValueError:
+#                     return Response(
+#                         {"error": "'user' must be an integer or 'unrecognized'."},
+#                         status=status.HTTP_400_BAD_REQUEST
+#                     )
+
+#                 try:
+#                     employee = Employee.objects.get(id=employee_id, is_active=True)
+#                 except Employee.DoesNotExist:
+#                     return Response(
+#                         {"error": "Employee not found."}, 
+#                         status=status.HTTP_404_NOT_FOUND
+#                     )
+
+#                 try:
+#                     today = timezone.now().date()
+#                     current_time = timezone.now().time()
+                    
+#                     # Get or create attendance record for today
+#                     attendance_record, created = AttendanceRecord.objects.get_or_create(
+#                         employee=employee,
+#                         date=today,
+#                         defaults={
+#                             'camera': camera_obj,
+#                             'region': camera_obj.region,
+#                             'check_in': current_time,
+#                             'face_image': face_file,
+#                             'distance': cosine_similarity,
+#                             'status': 'come'
+#                         }
+#                     )
+                    
+#                     if not created:
+#                         # Update check_out time if already exists
+#                         attendance_record.check_out = current_time
+#                         attendance_record.face_image = face_file
+#                         attendance_record.distance = cosine_similarity
+#                         attendance_record.save()
+                    
+#                     logger.info(f"Attendance recorded for employee {employee_id}")
+                    
+#                     return Response({
+#                         "status": "ok",
+#                         "employee_id": employee_id,
+#                         "cosine_similarity": cosine_similarity,
+#                         "saved_file": file_path,
+#                         "message": "Attendance recorded successfully"
+#                     }, status=status.HTTP_200_OK)
+                    
+#                 except Exception as e:
+#                     logger.error(f"Error creating attendance record: {e}")
+#                     return Response(
+#                         {"error": str(e)}, 
+#                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                     )
+
+#         except Exception as e:
+#             logger.error(f"Unexpected error in face recognition: {e}")
+#             return Response(
+#                 {"error": "Internal server error"}, 
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
+
+
 class FaceResultView(APIView):
     """
     Handle face recognition results from cameras.
     """
     parser_classes = (MultiPartParser, FormParser)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Process face recognition result",
-        description="Handle face data from client. If 'user' == 'unrecognized', save to UnknownFace model. Otherwise, 'user' should be an integer (employee_id) -> save to AttendanceRecord.",
+        description="Handle face data from client. If 'user' == 'unrecognized', save to UnknownFace model. Otherwise, 'user' should be an integer (employee_id) -> save to AttendanceRecord and EmployeeCameraStats.",
         request={
             'multipart/form-data': {
                 'type': 'object',
@@ -266,6 +503,7 @@ class FaceResultView(APIView):
                     'user': {'type': 'string', 'description': 'Employee ID or "unrecognized"'},
                     'cosine_similarity': {'type': 'number'},
                     'camera_ip': {'type': 'string', 'description': 'Camera IP address'},
+                    'timestamp': {'type': 'string', 'description': 'Timestamp in ISO format (optional)'}
                 }
             }
         },
@@ -273,9 +511,7 @@ class FaceResultView(APIView):
     )
     def post(self, request, format=None):
         """
-        Handle face data from client.
-        If 'user' == 'unrecognized', save to UnknownFace model.
-        Otherwise, 'user' should be an integer (employee_id) -> save to AttendanceRecord.
+        Handle face data from client and save to appropriate model.
         """
         try:
             # Extract data from request
@@ -283,23 +519,38 @@ class FaceResultView(APIView):
             cosine_similarity = request.data.get('cosine_similarity')
             user_value = request.data.get('user')
             camera_ip = request.data.get('camera_ip', "192.168.1.64")
+            timestamp_str = request.data.get('timestamp', None)
 
-            # Basic validation
-            if not face_file:
+            # Validate inputs
+            if not face_file or not cosine_similarity or not user_value:
                 return Response(
-                    {"error": "Missing file (use 'file' in multipart form-data)."},
+                    {"error": "Missing required fields (file, user, cosine_similarity)."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if not (cosine_similarity and user_value):
-                return Response(
-                    {"error": "Missing required fields (user, cosine_similarity)."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # try:
+            #     cosine_similarity = cosine_similarity)
+            # except (ValueError, TypeError):
+            #     return Response(
+            #         {"error": "cosine_similarity must be a number."},
+            #         status=status.HTTP_400_BAD_REQUEST
+            #     )
 
-            # Attempt to fetch camera
+            # Parse timestamp if provided, else use current time
+            timestamp = timezone.now()
+            if timestamp_str:
+                try:
+                    timestamp = datetime.fromisoformat(timestamp_str)
+                except ValueError:
+                    return Response(
+                        {"error": "Invalid timestamp format. Use ISO format (e.g., 2025-07-23T15:30:00)."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # Fetch camera by IP
             try:
-                camera_obj = Camera.objects.get(ip_address=camera_ip, status='active')
+                # camera_obj = Camera.objects.get(ip_address=camera_ip, status='active')
+                camera_obj = Camera.objects.first()
             except Camera.DoesNotExist:
                 logger.warning(f"Camera with IP {camera_ip} not found")
                 return Response(
@@ -307,115 +558,164 @@ class FaceResultView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Create the face_results directory if not exists
-            save_dir = os.path.join(settings.MEDIA_ROOT, "face_results")
-            os.makedirs(save_dir, exist_ok=True)
-            file_path = os.path.join(save_dir, face_file.name)
-
-            # Save file to disk
-            try:
-                with open(file_path, "wb") as f:
-                    for chunk in face_file.chunks():
-                        f.write(chunk)
-            except Exception as e:
-                logger.error(f"Could not save file: {e}")
-                return Response(
-                    {"error": f"Could not save file: {e}"}, 
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            # Common response data
+            response_data = {
+                "status": "ok",
+                "cosine_similarity": cosine_similarity,
+                "saved_file": f"face_results/stats/{face_file.name}",
+            }
 
             # Handle "unrecognized" user
             if user_value == "unrecognized":
                 try:
                     unknown_face = UnknownFace.objects.create(
                         face_image=face_file,
-                        distance=float(cosine_similarity),
+                        distance=cosine_similarity,
                         camera=camera_obj,
                         region=camera_obj.region
                     )
                     logger.info(f"Unknown face recorded: {unknown_face.id}")
-                    
-                    return Response({
-                        "status": "ok",
+                    response_data.update({
                         "employee_id": 0,
-                        "cosine_similarity": cosine_similarity,
-                        "saved_file": file_path,
                         "message": "Unknown face recorded successfully"
-                    }, status=status.HTTP_200_OK)
-                    
+                    })
+                    return Response(response_data, status=status.HTTP_200_OK)
                 except Exception as e:
                     logger.error(f"Error creating unknown face record: {e}")
-                    return Response(
-                        {"error": str(e)}, 
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
+                    return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Handle "recognized" user (employee)
-            else:
-                try:
-                    employee_id = int(user_value)
-                except ValueError:
-                    return Response(
-                        {"error": "'user' must be an integer or 'unrecognized'."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+            # Handle recognized user (employee)
+            try:
+                employee_id = int(user_value)
+                employee = Employee.objects.get(id=employee_id, is_active=True)
+            except ValueError:
+                return Response(
+                    {"error": "'user' must be an integer or 'unrecognized'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except Employee.DoesNotExist:
+                return Response(
+                    {"error": "Employee not found."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-                try:
-                    employee = Employee.objects.get(id=employee_id, is_active=True)
-                except Employee.DoesNotExist:
-                    return Response(
-                        {"error": "Employee not found."}, 
-                        status=status.HTTP_404_NOT_FOUND
-                    )
+            try:
+                today = timezone.now().date()
+                current_time = timezone.now().time()
 
-                try:
-                    today = timezone.now().date()
-                    current_time = timezone.now().time()
-                    
-                    # Get or create attendance record for today
-                    attendance_record, created = AttendanceRecord.objects.get_or_create(
-                        employee=employee,
-                        date=today,
-                        defaults={
-                            'camera': camera_obj,
-                            'region': camera_obj.region,
-                            'check_in': current_time,
-                            'face_image': face_file,
-                            'distance': float(cosine_similarity),
-                            'status': 'come'
-                        }
-                    )
-                    
-                    if not created:
-                        # Update check_out time if already exists
-                        attendance_record.check_out = current_time
-                        attendance_record.face_image = face_file
-                        attendance_record.distance = float(cosine_similarity)
-                        attendance_record.save()
-                    
-                    logger.info(f"Attendance recorded for employee {employee_id}")
-                    
-                    return Response({
-                        "status": "ok",
-                        "employee_id": employee_id,
-                        "cosine_similarity": cosine_similarity,
-                        "saved_file": file_path,
-                        "message": "Attendance recorded successfully"
-                    }, status=status.HTTP_200_OK)
-                    
-                except Exception as e:
-                    logger.error(f"Error creating attendance record: {e}")
-                    return Response(
-                        {"error": str(e)}, 
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
+                # Get or create attendance record for today
+                attendance_record, created = AttendanceRecord.objects.get_or_create(
+                    employee=employee,
+                    date=today,
+                    defaults={
+                        'camera': camera_obj,
+                        'region': camera_obj.region,
+                        'check_in': current_time,
+                        'face_image': face_file,
+                        'distance': cosine_similarity,
+                        'status': 'come'
+                    }
+                )
+
+                if not created:
+                    attendance_record.check_out = current_time
+                    attendance_record.face_image = face_file
+                    attendance_record.distance = cosine_similarity
+                    attendance_record.save()
+
+                # Create EmployeeCameraStats entry
+                EmployeeCameraStats.objects.create(
+                    employee=employee,
+                    camera=camera_obj,
+                    timestamp=timestamp,
+                    face_image=face_file,
+                    distance=cosine_similarity
+                )
+
+                logger.info(f"Attendance and stats recorded for employee {employee_id}")
+                response_data.update({
+                    "employee_id": employee_id,
+                    "message": "Attendance and stats recorded successfully"
+                })
+                return Response(response_data, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                logger.error(f"Error creating attendance record: {e}")
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         except Exception as e:
             logger.error(f"Unexpected error in face recognition: {e}")
-            return Response(
-                {"error": "Internal server error"}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class EmployeeCameraStatsView(APIView):
+    """
+    Retrieve statistics of face captures per employee per camera, with daily filtering.
+    """
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get employee face capture statistics",
+        description="Returns face captures for each employee per camera, filterable by date.",
+        parameters=[
+            {
+                'name': 'date',
+                'in': 'query',
+                'description': 'Filter by date (YYYY-MM-DD)',
+                'required': False,
+                'type': 'string'
+            }
+        ],
+        responses={
+            200: {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'employee_id': {'type': 'integer'},
+                        'employee_name': {'type': 'string'},
+                        'camera_ip': {'type': 'string'},
+                        'timestamp': {'type': 'string', 'format': 'date-time'},
+                        'face_image': {'type': 'string'},
+                        'distance': {'type': 'number'}
+                    }
+                }
+            }
+        }
+    )
+    def get(self, request, format=None):
+        try:
+            # Get date filter from query params
+            date_str = request.query_params.get('date')
+            queryset = EmployeeCameraStats.objects.select_related('employee', 'camera')
+
+            if date_str:
+                try:
+                    filter_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    queryset = queryset.filter(timestamp__date=filter_date)
+                except ValueError:
+                    return Response(
+                        {"error": "Invalid date format. Use YYYY-MM-DD."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            result = [
+                {
+                    "employee_id": stat.employee.id,
+                    "employee_name": stat.employee.first_name,
+                    "camera_ip": stat.camera.ip_address,
+                    "timestamp": stat.timestamp.isoformat(),
+                    "face_image":site_url + stat.face_image.url if stat.face_image else None,
+                    "distance": stat.distance
+                }
+                for stat in queryset
+            ]
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error fetching employee camera stats: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Statistics and Reports
 @extend_schema(
@@ -546,3 +846,4 @@ def dashboard_data(request):
         'recent_unknown_faces': UnknownFaceSerializer(recent_unknown, many=True).data,
         'recent_attendance': AttendanceRecordSerializer(recent_attendance, many=True).data,
     })
+

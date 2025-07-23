@@ -43,9 +43,28 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+
+
+class PositionApi(BaseModel):
+    """Position API model for managing positions"""
+    value = models.CharField(max_length=50, unique=True)
+    label = models.CharField(max_length=100, blank=True)
+    # description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.vulue
+
+    class Meta:
+        verbose_name = "Position"
+        verbose_name_plural = "Positions"
+        ordering = ['value']
+
+
+
 class Region(BaseModel):
     """Universitetlar yoki regionlar modeli."""
-    name = models.CharField(max_length=50, unique=True, choices=REGION_CHOICES)
+    name = models.CharField(max_length=50, unique=True,  choices=REGION_CHOICES)
     label = models.CharField(max_length=100, blank=True)
     employees_count = models.PositiveIntegerField(default=0, blank=True)
     arrivals_count = models.PositiveIntegerField(default=0, blank=True)
@@ -108,7 +127,12 @@ class Employee(BaseModel):
     last_name = models.CharField(max_length=30, db_index=True)
     middle_name = models.CharField(max_length=30, blank=True)
     employee_id = models.CharField(max_length=20, unique=True, blank=True)
-    position = models.CharField(max_length=50, choices=POSITION_CHOICES, blank=True)
+    position = models.CharField(max_length=50, choices=POSITION_CHOICES, blank=True,  default='developer')
+    positions = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True
+    )
     region = models.ForeignKey(
         Region, 
         on_delete=models.SET_NULL, 
@@ -337,7 +361,7 @@ class AttendanceRecord(BaseModel):
     date = models.DateField(db_index=True)
     status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='come')
     face_image = models.ImageField(upload_to='attendance_faces/', blank=True)
-    distance = models.FloatField(null=True, blank=True)
+    distance = models.CharField(max_length=10, null=True, blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True, db_index=True)
     notes = models.TextField(blank=True)
 
@@ -382,7 +406,7 @@ class UnknownFace(BaseModel):
     )
     face_image = models.ImageField(upload_to='unknown_faces/', blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    distance = models.FloatField(null=True, blank=True)
+    distance = models.CharField(max_length=10 , null=True, blank=True)
     face_encoding = models.JSONField(null=True, blank=True)
     is_processed = models.BooleanField(default=False)
     linked_employee = models.ForeignKey(
@@ -410,3 +434,19 @@ class UnknownFace(BaseModel):
             models.Index(fields=['recorded_at', 'is_processed']),
             models.Index(fields=['camera', 'recorded_at']),
         ]
+
+
+class EmployeeCameraStats(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(default=timezone.now)
+    face_image = models.ImageField(upload_to='face_results/stats/%Y/%m/%d/')
+    distance = models.CharField(max_length=10, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['employee', 'camera', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.employee.first_name} at {self.camera.ip_address} - {self.timestamp}"
