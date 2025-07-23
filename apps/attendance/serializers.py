@@ -78,7 +78,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'id', 'employee_id', 'first_name', 'last_name', 'middle_name', 'full_name','positions',
+            'id', 'employee_id', 'region_id','first_name', 'last_name', 'middle_name', 'full_name','positions',
             'position', 'position_display', 'region', 'region_id', 'terminal', 'terminal_id',
             'status', 'status_display', 'phone_number', 'email', 'hire_date',
             'is_active', 'images_count', 'attendance_count', 'created_at', 'updated_at'
@@ -219,7 +219,7 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
 
 class UnknownFaceSerializer(serializers.ModelSerializer):
     camera_name = serializers.CharField(source='camera.name', read_only=True)
-    region_name = serializers.CharField(source='region.label', read_only=True)
+    region_name = serializers.CharField(source='region.name', read_only=True)
     linked_employee_name = serializers.CharField(source='linked_employee.full_name', read_only=True)
     face_image_url = serializers.SerializerMethodField()
 

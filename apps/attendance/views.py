@@ -689,7 +689,7 @@ class EmployeeCameraStatsView(APIView):
         try:
             # Get date filter from query params
             date_str = request.query_params.get('date')
-            queryset = EmployeeCameraStats.objects.select_related('employee', 'camera')
+            queryset = EmployeeCameraStats.objects.select_related('employee', 'camera').order_by('-timestamp')
 
             if date_str:
                 try:
@@ -704,7 +704,10 @@ class EmployeeCameraStatsView(APIView):
             result = [
                 {
                     "employee_id": stat.employee.id,
-                    "employee_name": stat.employee.first_name,
+                    "last_name": stat.employee.first_name,
+                    "firs_name": stat.employee.last_name,
+                    "region": stat.employee.region.name if stat.employee.region else None,
+                    "position": stat.employee.position if stat.employee.position else None,
                     "camera_ip": stat.camera.ip_address,
                     "timestamp": stat.timestamp.isoformat(),
                     "face_image":site_url + stat.face_image.url if stat.face_image else None,

@@ -107,7 +107,7 @@ class Filial(BaseModel):
     #     blank=True, 
     #     related_name='filials'
     # )
-    universitet = models.CharField(max_length=50, unique=True, choices=REGION_CHOICES)
+    universitet = models.CharField(max_length=50, choices=REGION_CHOICES)
 
     def __str__(self):
         return self.name
@@ -125,7 +125,7 @@ class Employee(BaseModel):
     """Xodimlar modeli. Xodimlar haqida asosiy ma'lumotlarni saqlaydi."""
     first_name = models.CharField(max_length=30, db_index=True)
     last_name = models.CharField(max_length=30, db_index=True)
-    middle_name = models.CharField(max_length=30, blank=True)
+    middle_name = models.CharField(max_length=30, blank=True, null=True)
     employee_id = models.CharField(max_length=20, unique=True, blank=True)
     position = models.CharField(max_length=50, choices=POSITION_CHOICES, blank=True,  default='developer')
     positions = models.CharField(
