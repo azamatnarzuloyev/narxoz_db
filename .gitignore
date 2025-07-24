@@ -53,12 +53,12 @@ coverage.xml
 .hypothesis/
 
 # Docker
-*.pid
-*.swp
-docker-compose.override.yml
-docker-compose.prod.yml
-Dockerfile
-docker-compose.yml~
+# *.pid
+# *.swp
+# docker-compose.override.yml
+# docker-compose.prod.yml
+# Dockerfile
+# docker-compose.yml~
 
 # Celery
 celerybeat-schedule
