@@ -24,4 +24,4 @@ COPY . .
 EXPOSE 8000
 
 # Uvicorn orqali ilovani 0.0.0.0:8000 da ishga tushiramiz
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
