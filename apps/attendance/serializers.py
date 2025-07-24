@@ -7,6 +7,8 @@ from .models import (
     STATUS_CHOICES, ATTENDANCE_STATUS_CHOICES, PositionApi
 )
 
+
+
 class RegionSerializer(serializers.ModelSerializer):
     employees_count = serializers.SerializerMethodField()
     arrivals_count = serializers.SerializerMethodField()
@@ -49,16 +51,17 @@ class FilialSerializer(serializers.ModelSerializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     """Simplified serializer for employee list view"""
-    region_name = serializers.CharField(source='region.label', read_only=True)
+    region_name = serializers.CharField(source='region.name', read_only=True)
     terminal_name = serializers.CharField(source='terminal.name', read_only=True)
     position_display = serializers.CharField(source='get_position_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    image = serializers.ImageField(source='images.first.image', read_only=True)
 
     class Meta:
         model = Employee
         fields = [
-            'id', 'employee_id', 'first_name', 'last_name', 'full_name','positions',
-            'position', 'position_display', 'region_name', 'terminal_name',
+            'id', 'employee_id', 'first_name', 'last_name', 'full_name','positions', 'image',
+            'position', 'position_display', 'region_name', 'terminal_name', 'phone_number',
             'status', 'status_display', 'is_active', 'created_at'
         ]
 

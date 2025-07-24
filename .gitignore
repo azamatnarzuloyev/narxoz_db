@@ -9,18 +9,18 @@ __pycache__/
 *.pyc
 
 # Django specific
-db.sqlite3
-*.sqlite3
+# db.sqlite3
+# *.sqlite3
 *.mo
 *.log
 .env
 .env.*
 
 # Static and media
-/staticfiles/
-/media/
-/media_volume/
-/static_volume/
+# /staticfiles/
+# /media/
+# /media_volume/
+# /static_volume/
 
 # VSCode and PyCharm
 .vscode/
@@ -35,10 +35,10 @@ env/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Migrations (if you want to reset history regularly in dev)
-**/migrations/*.py
-!**/migrations/__init__.py
-**/migrations/*.pyc
+# # Migrations (if you want to reset history regularly in dev)
+# **/migrations/*.py
+# !**/migrations/__init__.py
+# **/migrations/*.pyc
 
 # Coverage and test
 htmlcov/

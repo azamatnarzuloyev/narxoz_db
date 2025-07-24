@@ -35,7 +35,7 @@ from datetime import datetime
 from rest_framework.authentication import TokenAuthentication
 
 logger = logging.getLogger(__name__)
-site_url = 'http://192.168.15.10:8000'
+site_url = 'http://127.0.0.1:8000'
 
 
 class PositionApiView(APIView):
@@ -649,6 +649,8 @@ class FaceResultView(APIView):
 
 
 
+
+
 class EmployeeCameraStatsView(APIView):
     """
     Retrieve statistics of face captures per employee per camera, with daily filtering.
@@ -685,11 +687,57 @@ class EmployeeCameraStatsView(APIView):
             }
         }
     )
-    def get(self, request, format=None):
+    def get(self, request,  format=None):
         try:
             # Get date filter from query params
             date_str = request.query_params.get('date')
             queryset = EmployeeCameraStats.objects.select_related('employee', 'camera').order_by('-timestamp')
+
+            if date_str:
+                try:
+                    filter_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    queryset = queryset.filter(timestamp__date=filter_date)
+                except ValueError:
+                    return Response(
+                        {"error": "Invalid date format. Use YYYY-MM-DD."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            result = [
+                {
+                    "employee_id": stat.employee.id,
+                    "last_name": stat.employee.first_name,
+                    "firs_name": stat.employee.last_name,
+                    "region": stat.employee.region.name if stat.employee.region else None,
+                    "position": stat.employee.position if stat.employee.position else None,
+                    "camera_ip": stat.camera.ip_address,
+                    "timestamp": stat.timestamp.isoformat(),
+                    "face_image":site_url + stat.face_image.url if stat.face_image else None,
+                    "distance": stat.distance
+                }
+                for stat in queryset
+            ]
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error fetching employee camera stats: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+class EmployeeCameraStatsDetailView(APIView):
+    """
+    Retrieve statistics of face captures per employee per camera, with daily filtering.
+    """
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
+
+   
+    def get(self, request, pk, format=None):
+        try:
+            # Get date filter from query params
+            date_str = request.query_params.get('date')
+            queryset = EmployeeCameraStats.objects.select_related('employee', 'camera').filter(employee__employee_id=pk).order_by('-timestamp')
 
             if date_str:
                 try:

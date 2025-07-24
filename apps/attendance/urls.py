@@ -49,5 +49,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard_data, name='dashboard-data'),
     path('link-unknown-face/', views.link_unknown_face, name='link-unknown-face'),
     path('employee-camera-stats/', views.EmployeeCameraStatsView.as_view(), name='employee-camera-stats'),
+    path('employee-camera-stats/<str:pk>/', views.EmployeeCameraStatsDetailView.as_view(), name='employee-camera-stats'),
 ]
 

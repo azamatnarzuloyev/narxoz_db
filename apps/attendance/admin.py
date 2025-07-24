@@ -39,7 +39,7 @@ class EmployeeAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Personal Information', {
-            'fields': ('employee_id', 'first_name', 'middle_name', 'last_name', 'full_name')
+            'fields': ('employee_id', 'first_name', 'middle_name', 'last_name', 'full_name','positions')
         }),
         ('Work Information', {
             'fields': ('position', 'region', 'terminal', 'hire_date')

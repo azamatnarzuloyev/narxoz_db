@@ -4,7 +4,7 @@ from .base import *
 DEBUG = True
 
 # ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = ['192.168.15.10', 'localhost', '192.168.15.255']
+ALLOWED_HOSTS = ['192.168.15.10', 'localhost', '192.168.15.255' , '127.0.0.1']
 
 # Database for development
 # DATABASES = {
