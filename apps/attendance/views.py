@@ -24,7 +24,7 @@ from .serializers import (
     TerminalSerializer, CameraSerializer, AttendanceRecordSerializer, 
     AdminSerializer, ImageSerializer, UnknownFaceSerializer, 
     FilialSerializer, AttendanceStatsSerializer, UnknownFaceLinkSerializer,
-    FaceRecognitionResultSerializer , PositionApiSerializer
+    FaceRecognitionResultSerializer , PositionApiSerializer , MultipleImageUploadSerializer
 )
 from .filters import (
     EmployeeFilter, RegionFilter, TerminalFilter, CameraFilter,
@@ -34,9 +34,24 @@ from .filters import (
 from datetime import datetime
 from rest_framework.authentication import TokenAuthentication
 
+
+
+
+
 logger = logging.getLogger(__name__)
 site_url = 'http://127.0.0.1:8000'
 
+
+class MultipleImageUploadView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = MultipleImageUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            images = serializer.save()
+            return Response({
+                "message": f"{len(images)} image(s) uploaded successfully.",
+                "image_ids": [img.id for img in images]
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PositionApiView(APIView):
     def get(self, request):
@@ -265,6 +280,9 @@ class ImageListCreateView(ListCreateAPIView):
     filterset_class = ImageFilter
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering = ['-uploaded_at']
+
+
+
 
 class ImageDetailView(RetrieveUpdateDestroyAPIView):
     """
@@ -537,7 +555,7 @@ class FaceResultView(APIView):
             #     )
 
             # Parse timestamp if provided, else use current time
-            timestamp = timezone.now()
+            timestamp = datetime.now()
             if timestamp_str:
                 try:
                     timestamp = datetime.fromisoformat(timestamp_str)

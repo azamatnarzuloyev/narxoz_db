@@ -183,6 +183,33 @@ class ImageSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         return obj.get_image_url
+    
+
+class MultipleImageUploadSerializer(serializers.Serializer):
+    employee_id = serializers.IntegerField()
+    # camera_id = serializers.IntegerField(required=False, allow_null=True)
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        allow_empty=False
+    )
+
+    def create(self, validated_data):
+        employee_id = validated_data['employee_id']
+        # camera_id = validated_data.get('camera_id')
+        images = validated_data['images']
+
+        image_objects = []
+        for img in images:
+            image_obj = Image.objects.create(
+                employee_id=employee_id,
+                # camera_id=camera_id,
+                image=img
+            )
+            image_objects.append(image_obj)
+
+        return image_objects
+    
+
 
 class AttendanceRecordSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)

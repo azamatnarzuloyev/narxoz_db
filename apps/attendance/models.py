@@ -249,7 +249,7 @@ class Camera(BaseModel):
         related_name='cameras'
     )
     location = models.CharField(max_length=255, blank=True)
-    rtsp_url = models.URLField(blank=True)
+    rtsp_url = models.CharField(max_length=200, blank=True)
     last_ping = models.DateTimeField(null=True, blank=True)
     filial = models.ForeignKey(
         Filial, 
@@ -338,6 +338,8 @@ class Image(BaseModel):
         verbose_name = "Image"
         verbose_name_plural = "Images"
         ordering = ['-uploaded_at']
+
+
 
 class AttendanceRecord(BaseModel):
     """Davomat yozuvlari modeli. Xodimlarning kelish-ketish vaqtlarini saqlaydi."""
@@ -450,3 +452,4 @@ class EmployeeCameraStats(models.Model):
 
     def __str__(self):
         return f"{self.employee.first_name} at {self.camera.ip_address} - {self.timestamp}"
+    

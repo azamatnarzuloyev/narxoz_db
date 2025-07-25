@@ -50,5 +50,6 @@ urlpatterns = [
     path('link-unknown-face/', views.link_unknown_face, name='link-unknown-face'),
     path('employee-camera-stats/', views.EmployeeCameraStatsView.as_view(), name='employee-camera-stats'),
     path('employee-camera-stats/<str:pk>/', views.EmployeeCameraStatsDetailView.as_view(), name='employee-camera-stats'),
+    path('upload-multiple-images/', views.MultipleImageUploadView.as_view(), name='upload-multiple-images'),
 ]
 
